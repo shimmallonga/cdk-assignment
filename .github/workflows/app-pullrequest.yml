@@ -1,0 +1,66 @@
+name: App-pullrequest
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - src/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - src/**
+
+jobs:
+
+  build-and-push: 
+    name: Build Docker Image
+    runs-on: ubuntu-latest  
+    steps:  
+        - name: Checkout
+          uses: actions/checkout@v4
+          
+        - name: Setup AWS ECR Details
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: ${{secrets.AWS_REGION}}
+
+
+        - name: Login to Amazon ECR
+          id: login-aws
+          uses: aws-actions/amazon-ecr-login@v2
+        
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v3
+
+        # - name: Build and push Docker image
+        #   uses: docker/build-push-action@v6
+        #   with:
+        #     context: . 
+        #     file: ./docker/Dockerfile 
+        #     push: true
+        #     tags: |
+        #       ${{ secrets.ECR_REPO }}:latest
+        #       ${{ secrets.ECR_REPO }}:${{ github.sha }}
+
+
+        - name: Set image tags
+          id: set-tags
+          run: |
+            if [ "${{ github.event_name }}" == "pull_request" ]; then
+              echo "tags=${{ secrets.ECR_REPO }}:dev-${{ github.sha }}" >> $GITHUB_OUTPUT
+            else
+              echo "tags=${{ secrets.ECR_REPO }}:latest,${{ secrets.ECR_REPO }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+            fi
+
+        # Step 6: Build and push Docker image
+        - name: Build and push Docker image
+          uses: docker/build-push-action@v6
+          with:
+            context: . # Build from src directory
+            file: ./Dockerfile # Path to Dockerfile in src
+            push: true
+            tags: ${{ steps.set-tags.outputs.tags }}

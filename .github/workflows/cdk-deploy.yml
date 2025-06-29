@@ -1,0 +1,54 @@
+name: CDK Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cdk 
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24' 
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+
+      - name: Install Typescript
+        run: npm install -g typescript
+
+      - name: Setup AWS ECR Details
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{secrets.AWS_REGION}}
+
+      - name: Bootstrap CDK
+        run: cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/ap-southeast-2
+
+      - name: Synthesize CDK stack
+        run: cdk synth
+
+      - name: Deploy CDK stack
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: cdk deploy --require-approval never
