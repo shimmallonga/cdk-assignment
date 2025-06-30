@@ -40,7 +40,7 @@ jobs:
       - name: Install Typescript
         run: npm install -g typescript
 
-      - name: Setup AWS ECR Details
+      - name: Setup AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -48,7 +48,7 @@ jobs:
           aws-region: ${{secrets.AWS_REGION}}
 
       - name: Bootstrap CDK
-        run: cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/ap-southeast-2
+        run: cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{secrets.AWS_REGION}}
 
       - name: Synthesize CDK stack
         run: cdk synth
