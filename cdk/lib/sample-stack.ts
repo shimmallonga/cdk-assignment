@@ -63,12 +63,12 @@ export class SampleStack extends Stack {
 
     });
 
-    // ECS
+    // // ECS
     const cluster = new ecs.Cluster(this, 'SampleCluster', {
       vpc: SampleVpc,
       clusterName: 'SampleCluster',
     });
-    
+
     const fargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'SampleService', {
       cluster,
       cpu: 256,
@@ -78,9 +78,15 @@ export class SampleStack extends Stack {
         image: ecs.ContainerImage.fromEcrRepository(SampleRepo, 'latest'),
         containerPort: 3000,
       },
-      publicLoadBalancer: true, // ALB gets a public IP
+      publicLoadBalancer: true, 
     });
 
+    fargateService.targetGroup.configureHealthCheck({
+      path: '/api/status',
+      port: '3000',
+      healthyHttpCodes: '200',
+    });
+    
 
     /*  #########################
         #####    OUTPUTS    #####

@@ -4,9 +4,13 @@ on:
   push:
     branches:
       - main
+    paths:
+      - cdk/**
   pull_request:
     branches:
       - main
+    paths:
+      - cdk/**
 
 jobs:
   build-and-deploy:
